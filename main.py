@@ -1,6 +1,10 @@
+import sys
 import pygame
 from constants import *
 from player import Player
+from asteroid import Asteroid 
+from asteroidfield import AsteroidField
+from shot import Shot
 
 
 def main():
@@ -12,6 +16,20 @@ def main():
 # clock variable assigned to the .Clock() object
     clock = pygame.time.Clock() 
     dt = 0
+
+    updatable = pygame.sprite.Group()
+    drawable = pygame.sprite.Group()
+    asteroids = pygame.sprite.Group()
+    shots = pygame.sprite.Group()
+
+# Player class is being updated with group assignment, not player object. 
+    Player.containers = (updatable, drawable)
+    Asteroid.containers = (asteroids, updatable, drawable)
+    AsteroidField.containers = (updatable)
+    Shot.containers = (shots, updatable, drawable)
+
+    asteroid_field = AsteroidField()
+#player obj must be below cahnge to Player class.
     player = Player((SCREEN_WIDTH/2), (SCREEN_HEIGHT/2))
 
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -20,11 +38,23 @@ def main():
             if event.type == pygame.QUIT:
                 return
        
-# updates player rotation from method in player.py, and is called before frame is rendered 
-        player.update(dt)
+# updates updatable sprites rotation from method in player.py, and is called before frame is rendered 
+        updatable.update(dt)
+        for asteroid in asteroids:
+            if asteroid.collision(player):
+                print("Game Over!")
+                sys.exit()
+# for loop in for loop iterates over asteroids and shots, checks collision and kills as needed
+            for shot in shots:
+                if asteroid.collision(shot):
+                    asteroid.split()
+                    shot.kill()
 # can set color using .fill("color") or .fill((R,G,B)) color tupe must be within it's own ()
         screen.fill("black")
-        player.draw(screen)
+# iterates over all obj. in drawable to draw the obj. on the screen.
+        for obj in drawable:
+            obj.draw(screen)
+
         pygame.display.flip()
 
 # converts milisec. to sec. and limits framerate to 60 FPS
